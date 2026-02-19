@@ -3,60 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kidsversity IoT Controller</title>
+    <title>Kidsversity IoT Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-        .card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
-        button { font-size: 1.2rem; padding: 10px 25px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-        .on-btn { background-color: #4CAF50; color: white; }
-        .off-btn { background-color: #f44336; color: white; }
-        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #eef2f3; padding-top: 50px; }
+        .card { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .status-light { height: 20px; width: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; vertical-align: middle; }
+        .on { background-color: #4CAF50; box-shadow: 0 0 10px #4CAF50; }
+        .off { background-color: #f44336; box-shadow: 0 0 10px #f44336; }
+        button { font-size: 1.1rem; padding: 12px 30px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; transition: 0.3s; }
+        .btn-on { background-color: #4CAF50; }
+        .btn-off { background-color: #f44336; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>ESP32 LED Control</h1>
-        <p>Project ID: iot-device-9a902</p>
-        <hr>
-        <button class="on-btn" id="btnOn">Turn LED ON</button>
-        <button class="off-btn" id="btnOff">Turn LED OFF</button>
-        <p id="status">Click a button to start</p>
+        <h1>IoT LED Control</h1>
+        <div>
+            <span id="light-indicator" class="status-light off"></span>
+            <strong id="status-text">LED is OFF</strong>
+        </div>
+        <br>
+        <button class="btn-on" id="btnOn">Turn ON</button>
+        <button class="btn-off" id="btnOff">Turn OFF</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA3FM6UKhtgwVsrSTW_19pVMaUrCFR4Bt4",
             authDomain: "iot-device-9a902.firebaseapp.com",
             databaseURL: "https://iot-device-9a902-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "iot-device-9a902",
-            storageBucket: "iot-device-9a902.firebasestorage.app",
-            messagingSenderId: "1027372613001",
-            appId: "1:1027372613001:web:c4c62bf75b89b4031d7558"
+            projectId: "iot-device-9a902"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const ledRef = ref(db, 'led_status');
 
-        // Function to update LED status
-        async function updateLED(value) {
-            try {
-                await set(ref(db, 'led_status'), value);
-                document.getElementById('status').innerText = "Status updated to: " + (value === 1 ? "ON" : "OFF");
-            } catch (error) {
-                console.error(error);
-                document.getElementById('status').innerText = "Error updating database!";
+        // Update Database on Click
+        document.getElementById('btnOn').onclick = () => set(ledRef, 1);
+        document.getElementById('btnOff').onclick = () => set(ledRef, 0);
+
+        // Listen for Real-time Updates
+        onValue(ledRef, (snapshot) => {
+            const val = snapshot.val();
+            const indicator = document.getElementById('light-indicator');
+            const text = document.getElementById('status-text');
+            
+            if (val === 1) {
+                indicator.className = "status-light on";
+                text.innerText = "LED is ON";
+            } else {
+                indicator.className = "status-light off";
+                text.innerText = "LED is OFF";
             }
-        }
-
-        // Event Listeners
-        document.getElementById('btnOn').addEventListener('click', () => updateLED(1));
-        document.getElementById('btnOff').addEventListener('click', () => updateLED(0));
+        });
     </script>
 </body>
 </html>
